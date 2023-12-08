@@ -1,40 +1,34 @@
 require('dotenv').config();
-const mysql = require('mysql2');
-
-const SERVER_URL = process.env.SERVER_URL || "http://localhost:3001";
+const { Pool } = require('pg');
 
 // Database Connection Configuration
 const dbConfig = {
-    host: 'localhost',
-    user: 'root',
-    password: process.env.DATABASE_PASSWORD,
-    database: 'social_media_db'
+    connectionString: process.env.DATABASE_URL, // PostgreSQL connection string
 };
 
 // instead of deleting the entire database, instead, 
 // deleting the tables is a way to clear the data
 async function deleteTables() {
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = new Pool(dbConfig);
+
     try {
         // Drop the tables
-        await connection.execute(`DROP TABLE IF EXISTS post_likes;`);
-        await connection.execute(`DROP TABLE IF EXISTS posts;`);
-        await connection.execute(`DROP TABLE IF EXISTS users;`);
+        await pool.query(`DROP TABLE IF EXISTS post_likes;`);
+        await pool.query(`DROP TABLE IF EXISTS posts;`);
+        await pool.query(`DROP TABLE IF EXISTS users;`);
         console.log("Tables dropped successfully.");
 
     } catch (error) {
         console.error("Error resetting database tables:", error);
-    } finally {
-        await connection.end();
     }
 }
 
 
 async function createTables() {
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = new Pool(dbConfig);
     try {
         // Create the users table
-        await connection.execute(`
+        await pool.query(`
             CREATE TABLE users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(255) NOT NULL UNIQUE,
@@ -49,7 +43,7 @@ async function createTables() {
         console.log("Users table created successfully.");
 
         // Create the posts table
-        await connection.execute(`
+        await pool.query(`
             CREATE TABLE posts (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT,
@@ -62,7 +56,7 @@ async function createTables() {
         console.log("Posts table created successfully.");
 
         // Create the post_likes table
-        await connection.execute(`
+        await pool.query(`
             CREATE TABLE post_likes (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 post_id INT,
@@ -75,8 +69,6 @@ async function createTables() {
         console.log("Post likes table created successfully.");
     } catch (error) {
         console.error("Error creating tables:", error);
-    } finally {
-        await connection.end();
     }
 }
 
