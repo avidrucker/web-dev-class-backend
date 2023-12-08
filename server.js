@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
-const pg = require('pg');
+const { Pool } = require('pg');
 const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
