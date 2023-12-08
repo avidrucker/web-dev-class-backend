@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
-const mysql = require('mysql');
+const pg = require('pg');
 const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
@@ -9,7 +9,7 @@ const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcrypt'); // password encryption
 
 const app = express();
-const PORT = 3001; // was 3001 for local version of the process
+const PORT = process.env.PORT;
 
 app.use(cors({
     origin: 'https://cosmic-hotteok-101592.netlify.app', // where the front end is served from
@@ -36,7 +36,8 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-const db = mysql.createConnection({
+const db = new Pool({
+    connectionString: process.env.DATABASE_URL
     host: process.env.SERVER, //'localhost'
     user: process.env.DB_USERNAME, //'root'
     password: process.env.DB_PASSWORD,
