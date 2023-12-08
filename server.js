@@ -37,7 +37,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 const db = new Pool({
-    connectionString: process.env.DATABASE_URL
+    connectionString: process.env.DATABASE_URL,
     host: process.env.SERVER, //'localhost'
     user: process.env.DB_USERNAME, //'root'
     password: process.env.DB_PASSWORD,
