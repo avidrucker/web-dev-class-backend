@@ -297,7 +297,7 @@ app.post('/register', async (req, res) => {
         });
     } catch (err) {
         console.error("Registration error:", err);
-        res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json({success: false, message: 'Error registering the user'});
+        res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json({success: false, message: 'Error registering the user: ' + err.message});
     }
 });
 
