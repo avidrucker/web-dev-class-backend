@@ -9,73 +9,6 @@ const dbConfig = {
 
 const SERVER_URL = process.env.SERVER_URL || "https://web-dev-class-backend.onrender.com/";
 
-// instead of deleting the entire database, instead, 
-// deleting the tables is a way to clear the data
-async function deleteTables() {
-    const pool = new Pool(dbConfig);
-
-    try {
-        // Drop the tables
-        await pool.query(`DROP TABLE IF EXISTS post_likes;`);
-        await pool.query(`DROP TABLE IF EXISTS posts;`);
-        await pool.query(`DROP TABLE IF EXISTS users;`);
-        console.log("Tables dropped successfully.");
-
-    } catch (error) {
-        console.error("Error resetting database tables:", error);
-    }
-}
-
-
-async function createTables() {
-    const pool = new Pool(dbConfig);
-    try {
-        // Create the users table
-        await pool.query(`
-            CREATE TABLE users (
-                id SERIAL PRIMARY KEY,
-                username VARCHAR(255) NOT NULL UNIQUE,
-                f_name VARCHAR(255) NOT NULL,
-                m_name VARCHAR(255),
-                l_name VARCHAR(255) NOT NULL,
-                initials VARCHAR(255) NOT NULL,
-                profile_color VARCHAR(255) NOT NULL,
-                password VARCHAR(255) NOT NULL
-            );
-        `);
-        console.log("Users table created successfully.");
-
-        // Create the posts table
-        await pool.query(`
-            CREATE TABLE posts (
-                id SERIAL PRIMARY KEY,
-                user_id INT,
-                content TEXT,
-                edited BOOLEAN NOT NULL DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            );
-        `);
-        console.log("Posts table created successfully.");
-
-        // Create the post_likes table
-        await pool.query(`
-            CREATE TABLE post_likes (
-                id SERIAL PRIMARY KEY,
-                post_id INT,
-                user_id INT,
-                UNIQUE(post_id, user_id),
-                FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            );
-        `);
-        console.log("Post likes table created successfully.");
-    } catch (error) {
-        console.error("Error creating tables:", error);
-    }
-}
-
-// ... [Existing code for database reset, demo user creation, and demo post creation] ...
 const demoUsers = [
     {
         "username": "Alice",
@@ -242,16 +175,12 @@ function sleep(ms) {
 
 // drop the tables and recreate them
 (async () => {
-//    await resetDatabase(); // disabled for now
-    await deleteTables();
     await sleep(1000);  // Wait for 1 second
-    await createTables();
-    // await sleep(1000);  // Wait for 1 second
-    // await createDemoUsers();
-    // await sleep(1000);  // Wait for 1 second
-    // await updateProfileColors();
-    // await createDemoPosts();
-    // await sleep(1000);  // Wait for 1 second
-    // await createDemoLikes();
+    await createDemoUsers();
+    await sleep(1000);  // Wait for 1 second
+    await updateProfileColors();
+    await createDemoPosts();
+    await sleep(1000);  // Wait for 1 second
+    await createDemoLikes();
 })();
 

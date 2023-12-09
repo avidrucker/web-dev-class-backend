@@ -7,7 +7,7 @@
   "description": "A simple Node app built on Express, instantly up and running.",
   "main": "server.js",
   "scripts": {
-    "start": "node setupDemoData.js && node server.js"
+    "start": "node setupDemoData.js && node server.js && node setupDemoData2.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
