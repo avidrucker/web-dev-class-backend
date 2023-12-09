@@ -272,6 +272,8 @@ app.post('/register', async (req, res) => {
     try {
         // password encryption
         // comment next line if you need to turn password hashing off
+        console.log("confirming that password is present and in the correct format for bcrypt:");
+        console.log(req.body);
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
         const user = { username: req.body.username, f_name: req.body.fname,
 		       m_name: req.body.mname, l_name: req.body.lname,
