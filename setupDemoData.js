@@ -31,7 +31,7 @@ async function createTables() {
         // Create the users table
         await pool.query(`
             CREATE TABLE users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 username VARCHAR(255) NOT NULL UNIQUE,
                 f_name VARCHAR(255) NOT NULL,
                 m_name VARCHAR(255),
@@ -46,10 +46,10 @@ async function createTables() {
         // Create the posts table
         await pool.query(`
             CREATE TABLE posts (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 user_id INT,
                 content TEXT,
-                edited BOOLEAN NOT NULL DEFAULT 0,
+                edited BOOLEAN NOT NULL DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );
@@ -59,7 +59,7 @@ async function createTables() {
         // Create the post_likes table
         await pool.query(`
             CREATE TABLE post_likes (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 post_id INT,
                 user_id INT,
                 UNIQUE(post_id, user_id),
