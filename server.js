@@ -369,10 +369,31 @@ app.get('/logout', (req, res) => {
 });
 
 
+//app.get('/successLogin', (req, res) =>
+//    {
+//        res.json({ success: true, 
+//                   message: 'Login successful', 
+//                   userId: req.session.passport.user });
+//});
 app.get('/successLogin', (req, res) => {
-    res.json({ success: true, 
-    message: 'Login successful', 
-    userId: req.session.passport.user });
+    // Debugging: Log session and user data
+    console.log("Session data:", req.session);
+    console.log("User data:", req.user);
+
+    if (req.session.passport && req.session.passport.user) {
+        res.json({ 
+            success: true, 
+            message: 'Login successful', 
+            userId: req.session.passport.user 
+        });
+    } else {
+        // Handle cases where session data might not be available
+        console.error("Error: Session data is not available.");
+        res.status(500).json({ 
+            success: false, 
+            message: 'Internal Server Error. Session data is not available.' 
+        });
+    }
 });
 
 app.get('/failureLogin', (req, res) => {
