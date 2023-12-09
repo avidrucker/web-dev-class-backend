@@ -284,6 +284,8 @@ passport.deserializeUser(async (id, done) => {
     try {
         const sql = 'SELECT * FROM users WHERE id = $1';
         const { rows } = await db.query(sql, [id]);
+        console.log("rows: ")
+        console.log(rows);
         if (rows.length > 0) {
             done(null, rows[0]);
         } else {
