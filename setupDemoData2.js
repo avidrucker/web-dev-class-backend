@@ -2,6 +2,8 @@ require('dotenv').config();
 const { Pool } = require('pg');
 const fetch = require('node-fetch');
 
+console.log("setting up user data w/ users, posts, and likes");
+
 // Database Connection Configuration
 const dbConfig = {
     connectionString: process.env.DATABASE_URL, // PostgreSQL connection string
@@ -45,6 +47,7 @@ const demoUsers = [
 ];
 
 async function createDemoUsers() {
+    console.log("creating demo users...");
     for (const user of demoUsers) {
         try {
             const response = await fetch(`${SERVER_URL}/register`, {
@@ -65,7 +68,7 @@ async function createDemoUsers() {
                 console.error(`Error creating user ${user.username}:`, await response.text());
             }
         } catch (error) {
-            console.log("hey");
+            console.log("hi");
             console.error(`Error creating user ${user.username}:`, error);
         }
     }
@@ -84,6 +87,7 @@ const demoPosts = [
 ];
 
 async function createDemoPosts() {
+    console.log("creating demo posts...");
     for (const post of demoPosts) {
         try {
             const response = await fetch(`${SERVER_URL}/demo/posts`, {
@@ -126,6 +130,7 @@ const demoLikes = [
 ];
 
 async function createDemoLikes() {
+    console.log("creating demo likes...");
     for (const like of demoLikes) {
         try {
             const response = await fetch(`${SERVER_URL}/demo/toggleLike/${like.postId}`, {
