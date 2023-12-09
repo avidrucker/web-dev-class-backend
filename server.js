@@ -273,13 +273,28 @@ passport.serializeUser((user, done) => {
     done(null, user.id);
 });
 
-passport.deserializeUser((id, done) => {
-    const sql = 'SELECT * FROM users WHERE id = $1';
-    db.query(sql, [id], (err, results) => {
-        if (err) { return done(err); }
-        done(null, results[0]);
-    });
+//passport.deserializeUser((id, done) => {
+//    const sql = 'SELECT * FROM users WHERE id = $1';
+//    db.query(sql, [id], (err, results) => {
+//        if (err) { return done(err); }
+//        done(null, results[0]);
+//    });
+//});
+passport.deserializeUser(async (id, done) => {
+    try {
+        const sql = 'SELECT * FROM users WHERE id = $1';
+        const { rows } = await db.query(sql, [id]);
+        if (rows.length > 0) {
+            done(null, rows[0]);
+        } else {
+            done(new Error("User not found"), null);
+        }
+    } catch (err) {
+        console.error("Error in deserialization:", err);
+        done(err, null);
+    }
 });
+
 
 const genInitials = (f_name, m_name, l_name) => {
     let initials = "";
