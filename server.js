@@ -7,6 +7,7 @@ const session = require('express-session');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcrypt'); // password encryption
+const fetch = require('node-fetch');
 
 const app = express();
 const PORT = process.env.PORT;
@@ -69,7 +70,7 @@ app.put('/demo/updateProfileColor', (req, res) => {
         return res.status(400).json({ success: false, message: 'Username and profile color are required.' });
     }
 
-    const updateColorSql = 'UPDATE users SET profile_color = ? WHERE username = ?';
+    const updateColorSql = 'UPDATE users SET profile_color = $1 WHERE username = $2';
     db.query(updateColorSql, [profile_color, username], (err, result) => {
         if (err) {
             // console.log(err);
@@ -90,7 +91,7 @@ app.post('/demo/posts', (req, res) => {
         return res.status(400).json({ message: 'userId and content are required.' });
     }
 
-    const sql = 'INSERT INTO posts (user_id, content) VALUES (?, ?)';
+    const sql = 'INSERT INTO posts (user_id, content) VALUES ($1, $2)';
     db.query(sql, [userId, content], (err, results) => {
         if (err) {
             res.status(500).json({ message: "Error creating post" });
@@ -110,7 +111,7 @@ app.post('/demo/toggleLike/:postId', (req, res) => {
     }
 
     // Handle the liking logic
-    const insertQuery = "INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)";
+    const insertQuery = "INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2)";
     db.query(insertQuery, [postId, userId], (err, result) => {
         if (err) {
             return res.status(500).json({ message: "Error liking the post." });
@@ -152,14 +153,14 @@ app.get('/posts', ensureAuthenticated, (req, res) => {
             users.initials,
             users.profile_color,
             COUNT(post_likes.id) AS like_count,
-            SUM(CASE WHEN post_likes.user_id = ? THEN 1 ELSE 0 END) AS liked_by_current_user
+            SUM(CASE WHEN post_likes.user_id = $1 THEN 1 ELSE 0 END) AS liked_by_current_user
         FROM posts
         LEFT JOIN users ON posts.user_id = users.id
         LEFT JOIN post_likes ON posts.id = post_likes.post_id
     `;
 
     if (userIdToExclude) {
-        sql += ' WHERE posts.user_id != ?';
+        sql += ' WHERE posts.user_id != $2';
     }
 
     sql += ' GROUP BY posts.id';
@@ -187,11 +188,11 @@ app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
             users.initials,
             users.profile_color,
             COUNT(post_likes.id) AS like_count,
-            SUM(CASE WHEN post_likes.user_id = ? THEN 1 ELSE 0 END) AS liked_by_current_user
+            SUM(CASE WHEN post_likes.user_id = $1 THEN 1 ELSE 0 END) AS liked_by_current_user
         FROM posts
         LEFT JOIN users ON posts.user_id = users.id
         LEFT JOIN post_likes ON posts.id = post_likes.post_id
-        WHERE posts.user_id = ?
+        WHERE posts.user_id = $2
         GROUP BY posts.id
         ORDER BY posts.created_at DESC, posts.id DESC
     `;
@@ -207,7 +208,7 @@ passport.use(new LocalStrategy(
     (username, password, done) => {
         console.log("Attempting authentication for username:", username);
         
-        const sql = 'SELECT * FROM users WHERE username = ?';
+        const sql = 'SELECT * FROM users WHERE username = $1';
         db.query(sql, [username], async (err, results) => {
             if (err) {
                 console.error("Database error:", err);
@@ -243,7 +244,7 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser((id, done) => {
-    const sql = 'SELECT * FROM users WHERE id = ?';
+    const sql = 'SELECT * FROM users WHERE id = $1';
     db.query(sql, [id], (err, results) => {
         if (err) { return done(err); }
         done(null, results[0]);
@@ -280,7 +281,7 @@ app.post('/register', async (req, res) => {
 
 	    const avatar_color = getRandomItem(colors);
         
-        const sql = 'INSERT INTO users (username, f_name, m_name, l_name, initials, profile_color, password) VALUES (?, ?, ?, ?, ?, ?, ?)';
+        const sql = 'INSERT INTO users (username, f_name, m_name, l_name, initials, profile_color, password) VALUES ($1, $2, $3, $4, $5, $6, $7)';
 
         db.query(sql, [user.username, user.f_name, user.m_name, user.l_name,
 		       initials, avatar_color, user.password], (err, result) => {
@@ -297,6 +298,7 @@ app.post('/register', async (req, res) => {
         });
     } catch (err) {
         console.error("Registration error:", err);
+        console.log()
         res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json({success: false, message: 'Error registering the user: ' + err.message});
     }
 });
@@ -336,7 +338,7 @@ app.post('/posts', ensureAuthenticated, (req, res) => {
     const { content } = req.body;
     const userId = req.user.id;
 
-    const sql = 'INSERT INTO posts (user_id, content) VALUES (?, ?)';
+    const sql = 'INSERT INTO posts (user_id, content) VALUES ($1, $2)';
     db.query(sql, [userId, content], (err, results) => {
         if (err) {
             res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json("Error creating post");
@@ -350,7 +352,7 @@ app.post('/posts', ensureAuthenticated, (req, res) => {
 app.delete('/users/:userId', ensureAuthenticated, (req, res) => {
     const userId = req.user.id;
 
-    const sql = 'DELETE FROM users WHERE id = ?';
+    const sql = 'DELETE FROM users WHERE id = $1';
     db.query(sql, [userId], (err, results) => {
         if (err) {
             // console.error("Error deleting user:", err);
@@ -372,7 +374,7 @@ app.delete('/posts/:postId', ensureAuthenticated, (req, res) => {
     const postId = req.params.postId;
 
     // Check if the post exists and if the logged-in user is the author
-    const fetchPostSql = 'SELECT id FROM posts WHERE id = ? AND user_id = ?';
+    const fetchPostSql = 'SELECT id FROM posts WHERE id = $1 AND user_id = $2';
     db.query(fetchPostSql, [postId, req.user.id], (err, results) => {
         if (err) {
             console.error(err);
@@ -384,7 +386,7 @@ app.delete('/posts/:postId', ensureAuthenticated, (req, res) => {
         }
 
         // If the user is the author, proceed to delete the post
-	const deletePostSql = 'DELETE FROM posts WHERE id = ?';
+	const deletePostSql = 'DELETE FROM posts WHERE id = $1';
         db.query(deletePostSql, [postId], (err, _) => {
             if (err) {
                 console.error(err);
@@ -401,7 +403,7 @@ app.put('/posts/:postId', ensureAuthenticated, (req, res) => {
     const { content } = req.body;
 
     // Check if the post exists and if the logged-in user is the author
-    const fetchPostSql = 'SELECT id FROM posts WHERE id = ? AND user_id = ?';
+    const fetchPostSql = 'SELECT id FROM posts WHERE id = $1 AND user_id = $2';
     db.query(fetchPostSql, [postId, req.user.id], (err, results) => {
         if (err) {
             return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
@@ -412,7 +414,7 @@ app.put('/posts/:postId', ensureAuthenticated, (req, res) => {
         }
 
         // If the user is the author, proceed to edit the post, and mark post as "edited"
-        const editPostSql = 'UPDATE posts SET content = ?, edited = true WHERE id = ?';
+        const editPostSql = 'UPDATE posts SET content = $1, edited = true WHERE id = $2';
         db.query(editPostSql, [content, postId], (err, _) => {
             if (err) {
                 return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
@@ -433,7 +435,7 @@ function toggleLikeHandler(req, res) {
 
     if (req.method === 'POST') {
         // Handle the liking logic
-        const insertQuery = "INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)";
+        const insertQuery = "INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2)";
         db.query(insertQuery, [postId, userId], (err, result) => {
             if (err) {
                 return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json({ error: "Error liking the post." });
@@ -442,7 +444,7 @@ function toggleLikeHandler(req, res) {
         });
     } else if (req.method === 'DELETE') {
         // Handle the unliking logic
-        const deleteQuery = "DELETE FROM post_likes WHERE post_id = ? AND user_id = ?";
+        const deleteQuery = "DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2";
         db.query(deleteQuery, [postId, userId], (err, result) => {
             if (err) {
                 return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json({ error: "Error unliking the post." });
@@ -460,7 +462,7 @@ app.put('/updateProfileColor', ensureAuthenticated, (req, res) => {
     const { profile_color } = req.body;
     const userId = req.user.id;  // assuming req.user.id contains the logged-in user's ID
 
-    const updateColorSql = 'UPDATE users SET profile_color = ? WHERE id = ?';
+    const updateColorSql = 'UPDATE users SET profile_color = $1 WHERE id = $2';
     db.query(updateColorSql, [profile_color, userId], (err, _) => {
         if (err) {
             return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
@@ -475,7 +477,7 @@ app.put('/updateInitials', ensureAuthenticated, (req, res) => {
     const { initials } = req.body;
     const userId = req.user.id;  // assuming req.user.id contains the logged-in user's ID
 
-    const sql = 'UPDATE users SET initials = ? WHERE id = ?';
+    const sql = 'UPDATE users SET initials = $1 WHERE id = $2';
     db.query(sql, [initials, userId], (err, _) => {
         if (err) {
             return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
@@ -492,7 +494,7 @@ app.put('/updateUsername', ensureAuthenticated, (req, res) => {
     const userId = req.user.id;  // assuming req.user.id contains the logged-in user's ID
 
     // First check if the username already exists in the database
-    const checkSql = 'SELECT id FROM users WHERE username = ?';
+    const checkSql = 'SELECT id FROM users WHERE username = $1';
     db.query(checkSql, [username], (err, results) => {
         if (err) {
             return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
@@ -505,7 +507,7 @@ app.put('/updateUsername', ensureAuthenticated, (req, res) => {
         }
 
         // Now, update the username
-        const updateSql = 'UPDATE users SET username = ? WHERE id = ?';
+        const updateSql = 'UPDATE users SET username = $1 WHERE id = $2';
         db.query(updateSql, [username, userId], (err, _) => {
             if (err) {
                 return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
@@ -523,7 +525,7 @@ app.get('/currentUser', ensureAuthenticated, (req, res) => {
     const fetchUserDetailsSql = `
         SELECT f_name, m_name, l_name, initials, username, profile_color 
         FROM users 
-        WHERE id = ?`;
+        WHERE id = $1`;
     
     db.query(fetchUserDetailsSql, [userId], (err, results) => {
         if (err) {

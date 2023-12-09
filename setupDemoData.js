@@ -1,5 +1,6 @@
 require('dotenv').config();
 const { Pool } = require('pg');
+const fetch = require('node-fetch');
 
 // Database Connection Configuration
 const dbConfig = {
