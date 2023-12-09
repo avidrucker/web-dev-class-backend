@@ -204,38 +204,68 @@ app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
 });
 
 // Passport local strategy configuration
+//passport.use(new LocalStrategy(
+//    (username, password, done) => {
+//        console.log("Attempting authentication for username:", username);
+//        
+//        const sql = 'SELECT * FROM users WHERE username = $1';
+//        db.query(sql, [username], async (err, results) => {
+//            if (err) {
+//                console.error("Database error:", err);
+//                return done(err);
+//            }
+//            
+//            if (results.length === 0) {
+//                console.log("Username not found in database");
+//                return done(null, false);
+//            }
+//
+//            const user = results[0];
+//            // password encryption
+//            const isMatch = await bcrypt.compare(password, user.password);
+//            // uncomment next line if you need to turn password hashing off
+//            // const isMatch = password === user.password;            
+//
+//            if (isMatch) {
+//                console.log("Password matches. Authentication successful.");
+//                return done(null, user);
+//            } else {
+//                console.log("Password doesn't match. Authentication failed.");
+//                return done(null, false);
+//            }
+//        });
+//    }
+//));
 passport.use(new LocalStrategy(
-    (username, password, done) => {
+    async (username, password, done) => {
         console.log("Attempting authentication for username:", username);
-        
-        const sql = 'SELECT * FROM users WHERE username = $1';
-        db.query(sql, [username], async (err, results) => {
-            if (err) {
-                console.error("Database error:", err);
-                return done(err);
-            }
-            
-            if (results.length === 0) {
+
+        try {
+            const sql = 'SELECT * FROM users WHERE username = $1';
+            const { rows } = await db.query(sql, [username]);
+
+            if (rows.length === 0) {
                 console.log("Username not found in database");
-                return done(null, false);
+                return done(null, false, { message: 'Incorrect username.' });
             }
 
-            const user = results[0];
-            // password encryption
+            const user = rows[0];
             const isMatch = await bcrypt.compare(password, user.password);
-            // uncomment next line if you need to turn password hashing off
-            // const isMatch = password === user.password;            
 
             if (isMatch) {
                 console.log("Password matches. Authentication successful.");
                 return done(null, user);
             } else {
                 console.log("Password doesn't match. Authentication failed.");
-                return done(null, false);
+                return done(null, false, { message: 'Incorrect password.' });
             }
-        });
+        } catch (err) {
+            console.error("Authentication error:", err);
+            return done(err);
+        }
     }
 ));
+
 
 
 // Serialization and deserialization for Passport sessions
