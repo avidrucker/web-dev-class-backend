@@ -7,6 +7,8 @@ const dbConfig = {
     connectionString: process.env.DATABASE_URL, // PostgreSQL connection string
 };
 
+const SERVER_URL = process.env.SERVER_URL || "https://web-dev-class-backend.onrender.com/";
+
 // instead of deleting the entire database, instead, 
 // deleting the tables is a way to clear the data
 async function deleteTables() {
