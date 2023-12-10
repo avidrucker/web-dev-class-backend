@@ -156,28 +156,8 @@ app.get('/currentUserId', ensureAuthenticated, (req, res) => {
 app.get('/posts', ensureAuthenticated, (req, res) => {
     const userIdToExclude = req.query.excludeUserId; // Get the user ID from query params
     const currentUserId = req.session.passport.user;
-    console.log("fetching posts except for by user " + req.query.excludeUserId);
-//    let sql = `
-//        SELECT 
-//            posts.*,
-//            users.f_name,
-//            users.m_name,
-//            users.l_name,
-//            users.initials,
-//            users.profile_color,
-//            COUNT(post_likes.id) AS like_count,
-//            SUM(CASE WHEN post_likes.user_id = $1 THEN 1 ELSE 0 END) AS liked_by_current_user
-//        FROM posts
-//        LEFT JOIN users ON posts.user_id = users.id
-//        LEFT JOIN post_likes ON posts.id = post_likes.post_id
-//    `;
-//
-//    if (userIdToExclude) {
-//        sql += ' WHERE posts.user_id != $2';
-//    }
-//
-//    sql += ' GROUP BY posts.id';
-//    sql += ' ORDER BY posts.created_at DESC, posts.id DESC';
+    console.log("fetching posts except for by user " + userIdToExclude);
+    console.log("currentUserId " + currentUserId);
 
     let sql = `
         SELECT 
@@ -203,6 +183,7 @@ app.get('/posts', ensureAuthenticated, (req, res) => {
 
     db.query(sql, [currentUserId, userIdToExclude], (err, results) => {
         if (err) {
+            console.error('Database query error:', err);
             return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
         }
         res.json(results);
@@ -211,7 +192,7 @@ app.get('/posts', ensureAuthenticated, (req, res) => {
 
 // Fetch posts of a specific user
 app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
-    // Q: What is the diff betwee ncurrentUserId and userId?
+    // Q: What is the diff between currentUserId and userId?
     const userId = req.params.userId;
     const currentUserId = req.session.passport.user;
     console.log("fetching posts by user of id " + currentUserId)
@@ -242,7 +223,7 @@ app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
             users.initials,
             users.profile_color,
             COUNT(post_likes.id) AS like_count,
-            SUM(CASE WHEN post_likes.user_id = $1 THEN 1 ELSE 0 END) AS liked_by_current_user
+            SUM(CASE WHEN post_likes.user_id = $1 THEN TRUE ELSE FALSE END) AS liked_by_current_user
         FROM posts
         LEFT JOIN users ON posts.user_id = users.id
         LEFT JOIN post_likes ON posts.id = post_likes.post_id
