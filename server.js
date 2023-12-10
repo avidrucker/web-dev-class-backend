@@ -215,6 +215,7 @@ app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
 passport.use(new LocalStrategy(
     async (username, password, done) => {
         console.log("Attempting authentication for username:", username);
+        console.log("with password: " + password);
 
         try {
             const sql = 'SELECT * FROM users WHERE username = $1';
@@ -251,6 +252,7 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser(async (id, done) => {
+    console.log("attemptin to deserialize user");
     try {
         const sql = 'SELECT * FROM users WHERE id = $1';
         const { rows } = await db.query(sql, [id]);
@@ -343,9 +345,9 @@ app.get('/logout', (req, res) => {
 
 app.get('/successLogin', (req, res) => {
     // Debugging: Log session and user data
-    // console.log("req:", req);
     console.log("Session data:", req.session);
     console.log("User data:", req.user);
+    console.log("Passport data:", req.session.passport);
 
     if (req.session.passport && req.session.passport.user) {
         res.json({ 
