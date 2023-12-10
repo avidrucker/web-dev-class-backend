@@ -29,6 +29,8 @@ app.get('/', (req, res) => {
 
 app.use(bodyParser.json());
 
+app.set("trust proxy", 1);
+
 // Session configuration
 app.use(session({
     secret: process.env.SECRET_KEY,
@@ -37,7 +39,7 @@ app.use(session({
     cookie: {
         httpOnly: true,
         secure: true, // set to true if using https
-        sameSite: 'lax', // set to 'none' if dealing with cross-origin requests
+        sameSite: 'none', // set to 'none' if dealing with cross-origin requests
         domain: "web-dev-class-backend.onrender.com", // Replace with your domain name
         path: '/',
         maxAge: 24 * 60 * 60 * 1000
