@@ -168,7 +168,7 @@ app.get('/posts', ensureAuthenticated, (req, res) => {
             users.initials,
             users.profile_color,
             COUNT(post_likes.id) AS like_count,
-            SUM(CASE WHEN post_likes.user_id = $1 THEN TRUE ELSE FALSE END) AS liked_by_current_user
+            SUM(CASE WHEN post_likes.user_id = $1 THEN 1 ELSE 0 END) AS liked_by_current_user
         FROM posts
         LEFT JOIN users ON posts.user_id = users.id
         LEFT JOIN post_likes ON posts.id = post_likes.post_id
@@ -223,7 +223,7 @@ app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
             users.initials,
             users.profile_color,
             COUNT(post_likes.id) AS like_count,
-            SUM(CASE WHEN post_likes.user_id = $1 THEN TRUE ELSE FALSE END) AS liked_by_current_user
+            SUM(CASE WHEN post_likes.user_id = $1 THEN 1 ELSE 0 END) AS liked_by_current_user
         FROM posts
         LEFT JOIN users ON posts.user_id = users.id
         LEFT JOIN post_likes ON posts.id = post_likes.post_id
