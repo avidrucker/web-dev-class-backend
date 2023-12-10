@@ -7,14 +7,20 @@ const session = require('express-session');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcrypt'); // password encryption
-const fetch = require('node-fetch');
+// const fetch = require('node-fetch');
 
 const app = express();
 const PORT = process.env.PORT;
 
+//app.use(cors({
+//    origin: 'https://cosmic-hotteok-101592.netlify.app', // where the front end is served from
+//    credentials: true}));
 app.use(cors({
-    origin: 'https://cosmic-hotteok-101592.netlify.app', // where the front end is served from
-    credentials: true}));
+    origin: 'https://cosmic-hotteok-101592.netlify.app',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
@@ -30,7 +36,12 @@ app.use(bodyParser.json());
 app.use(session({
     secret: process.env.SECRET_KEY,
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: true, // set to true if using https
+        sameSite: 'none' // set to 'none' if dealing with cross-origin requests
+    }
 }));
 
 // Initialize Passport and its session support
@@ -330,13 +341,6 @@ app.get('/logout', (req, res) => {
     });
 });
 
-
-//app.get('/successLogin', (req, res) =>
-//    {
-//        res.json({ success: true, 
-//                   message: 'Login successful', 
-//                   userId: req.session.passport.user });
-//});
 app.get('/successLogin', (req, res) => {
     // Debugging: Log session and user data
     console.log("Session data:", req.session);
