@@ -12,9 +12,6 @@ const bcrypt = require('bcrypt'); // password encryption
 const app = express();
 const PORT = process.env.PORT;
 
-//app.use(cors({
-//    origin: 'https://cosmic-hotteok-101592.netlify.app', // where the front end is served from
-//    credentials: true}));
 app.use(cors({
     origin: 'https://cosmic-hotteok-101592.netlify.app',
     credentials: true,
@@ -220,13 +217,15 @@ passport.use(new LocalStrategy(
         console.log("Attempting authentication for username:", username);
 
         try {
-            const sql = 'SELECT * FROM users WHERE username = $1';
+            const sql = 'SELECT * FROM users WHERE username = "$1"';
             const { rows } = await db.query(sql, [username]);
 
             if (rows.length === 0) {
                 console.log("Username not found in database");
                 return done(null, false, { message: 'Incorrect username.' });
             }
+
+            console.log("rows", rows);
 
             const user = rows[0];
             const isMatch = await bcrypt.compare(password, user.password);
@@ -344,7 +343,7 @@ app.get('/logout', (req, res) => {
 
 app.get('/successLogin', (req, res) => {
     // Debugging: Log session and user data
-    console.log("req:", req);
+    // console.log("req:", req);
     console.log("Session data:", req.session);
     console.log("User data:", req.user);
 
