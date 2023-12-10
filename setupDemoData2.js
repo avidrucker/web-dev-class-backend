@@ -1,3 +1,6 @@
+// note: because server.js is running constantly on the single thread,
+// setupDemoData2.js will not be run concurrently/after
+
 require('dotenv').config();
 const { Pool } = require('pg');
 const fetch = require('node-fetch');
