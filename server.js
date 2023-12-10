@@ -157,6 +157,28 @@ app.get('/posts', ensureAuthenticated, (req, res) => {
     const userIdToExclude = req.query.excludeUserId; // Get the user ID from query params
     const currentUserId = req.session.passport.user;
 
+//    let sql = `
+//        SELECT 
+//            posts.*,
+//            users.f_name,
+//            users.m_name,
+//            users.l_name,
+//            users.initials,
+//            users.profile_color,
+//            COUNT(post_likes.id) AS like_count,
+//            SUM(CASE WHEN post_likes.user_id = $1 THEN 1 ELSE 0 END) AS liked_by_current_user
+//        FROM posts
+//        LEFT JOIN users ON posts.user_id = users.id
+//        LEFT JOIN post_likes ON posts.id = post_likes.post_id
+//    `;
+//
+//    if (userIdToExclude) {
+//        sql += ' WHERE posts.user_id != $2';
+//    }
+//
+//    sql += ' GROUP BY posts.id';
+//    sql += ' ORDER BY posts.created_at DESC, posts.id DESC';
+
     let sql = `
         SELECT 
             posts.*,
@@ -176,7 +198,7 @@ app.get('/posts', ensureAuthenticated, (req, res) => {
         sql += ' WHERE posts.user_id != $2';
     }
 
-    sql += ' GROUP BY posts.id';
+    sql += ' GROUP BY posts.id, users.f_name, users.m_name, users.l_name, users.initials, users.profile_color';
     sql += ' ORDER BY posts.created_at DESC, posts.id DESC';
 
     db.query(sql, [currentUserId, userIdToExclude], (err, results) => {
@@ -192,6 +214,23 @@ app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
     const userId = req.params.userId;
     const currentUserId = req.session.passport.user;
 
+//    const sql = `
+//        SELECT 
+//            posts.*,
+//            users.f_name,
+//            users.m_name,
+//            users.l_name,
+//            users.initials,
+//            users.profile_color,
+//            COUNT(post_likes.id) AS like_count,
+//            SUM(CASE WHEN post_likes.user_id = $1 THEN 1 ELSE 0 END) AS liked_by_current_user
+//        FROM posts
+//        LEFT JOIN users ON posts.user_id = users.id
+//        LEFT JOIN post_likes ON posts.id = post_likes.post_id
+//        WHERE posts.user_id = $2
+//        GROUP BY posts.id
+//        ORDER BY posts.created_at DESC, posts.id DESC
+//    `;
     const sql = `
         SELECT 
             posts.*,
@@ -206,7 +245,7 @@ app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
         LEFT JOIN users ON posts.user_id = users.id
         LEFT JOIN post_likes ON posts.id = post_likes.post_id
         WHERE posts.user_id = $2
-        GROUP BY posts.id
+        GROUP BY posts.id, users.f_name, users.m_name, users.l_name, users.initials, users.profile_color
         ORDER BY posts.created_at DESC, posts.id DESC
     `;
 
@@ -219,8 +258,8 @@ app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
 // Passport local strategy configuration
 passport.use(new LocalStrategy(
     async (username, password, done) => {
-        console.log("Attempting authentication for username:", username);
-        console.log("with password: " + password);
+        // console.log("Attempting authentication for username:", username);
+        // console.log("with password: " + password);
 
         try {
             const sql = 'SELECT * FROM users WHERE username = $1';
@@ -231,7 +270,7 @@ passport.use(new LocalStrategy(
                 return done(null, false, { message: 'Incorrect username.' });
             }
 
-            console.log("rows", rows);
+            // console.log("rows", rows);
 
             const user = rows[0];
             const isMatch = await bcrypt.compare(password, user.password);
@@ -257,14 +296,14 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser(async (id, done) => {
-    console.log("attemptin to deserialize user");
+    console.log("attempting to deserialize user");
     try {
         const sql = 'SELECT * FROM users WHERE id = $1';
         const { rows } = await db.query(sql, [id]);
-        console.log("rows: ")
-        console.log(rows);
+        // console.log("rows: ")
+        // console.log(rows);
         if (rows.length > 0) {
-            console.log("user found");
+            // console.log("user found");
             done(null, rows[0]);
         } else {
             done(new Error("User not found"), null);
@@ -297,8 +336,8 @@ app.post('/register', async (req, res) => {
     try {
         // password encryption
         // comment next line if you need to turn password hashing off
-        console.log("confirming that password is present and in the correct format for bcrypt:");
-        console.log(req.body);
+        // console.log("confirming that password is present and in the correct format for bcrypt:");
+        // console.log(req.body);
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
         const user = { username: req.body.username, f_name: req.body.fname,
 		       m_name: req.body.mname, l_name: req.body.lname,
