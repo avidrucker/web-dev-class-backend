@@ -577,3 +577,14 @@ app.get('/currentUser', ensureAuthenticated, (req, res) => {
         res.json(user);
     });
 });
+
+app.get('/set-session', (req, res) => {
+    req.session.testData = 'This is a test';
+    res.send('Session data set');
+});
+
+app.get('/get-session', (req, res) => {
+    const sessionData = req.session.testData || 'No session data';
+    res.send(`Session data: ${sessionData}`);
+});
+
