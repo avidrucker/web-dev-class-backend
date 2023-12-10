@@ -217,7 +217,7 @@ passport.use(new LocalStrategy(
         console.log("Attempting authentication for username:", username);
 
         try {
-            const sql = 'SELECT * FROM users WHERE username = "$1"';
+            const sql = 'SELECT * FROM users WHERE username = $1';
             const { rows } = await db.query(sql, [username]);
 
             if (rows.length === 0) {
