@@ -156,7 +156,7 @@ app.get('/currentUserId', ensureAuthenticated, (req, res) => {
 app.get('/posts', ensureAuthenticated, (req, res) => {
     const userIdToExclude = req.query.excludeUserId; // Get the user ID from query params
     const currentUserId = req.session.passport.user;
-
+    console.log("fetching posts except for by user " + req.query.excludeUserId);
 //    let sql = `
 //        SELECT 
 //            posts.*,
@@ -188,7 +188,7 @@ app.get('/posts', ensureAuthenticated, (req, res) => {
             users.initials,
             users.profile_color,
             COUNT(post_likes.id) AS like_count,
-            SUM(CASE WHEN post_likes.user_id = $1 THEN 1 ELSE 0 END) AS liked_by_current_user
+            SUM(CASE WHEN post_likes.user_id = $1 THEN TRUE ELSE FALSE END) AS liked_by_current_user
         FROM posts
         LEFT JOIN users ON posts.user_id = users.id
         LEFT JOIN post_likes ON posts.id = post_likes.post_id
@@ -211,8 +211,10 @@ app.get('/posts', ensureAuthenticated, (req, res) => {
 
 // Fetch posts of a specific user
 app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
+    // Q: What is the diff betwee ncurrentUserId and userId?
     const userId = req.params.userId;
     const currentUserId = req.session.passport.user;
+    console.log("fetching posts by user of id " + currentUserId)
 
 //    const sql = `
 //        SELECT 
@@ -300,10 +302,9 @@ passport.deserializeUser(async (id, done) => {
     try {
         const sql = 'SELECT * FROM users WHERE id = $1';
         const { rows } = await db.query(sql, [id]);
-        // console.log("rows: ")
-        // console.log(rows);
+        
         if (rows.length > 0) {
-            // console.log("user found");
+            console.log("user found:", rows[0]);
             done(null, rows[0]);
         } else {
             done(new Error("User not found"), null);
