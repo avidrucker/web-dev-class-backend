@@ -258,6 +258,7 @@ passport.deserializeUser(async (id, done) => {
         console.log("rows: ")
         console.log(rows);
         if (rows.length > 0) {
+            console.log("user found");
             done(null, rows[0]);
         } else {
             done(new Error("User not found"), null);
@@ -343,6 +344,7 @@ app.get('/logout', (req, res) => {
 
 app.get('/successLogin', (req, res) => {
     // Debugging: Log session and user data
+    console.log("req:", req);
     console.log("Session data:", req.session);
     console.log("User data:", req.user);
 
