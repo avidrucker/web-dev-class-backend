@@ -40,6 +40,7 @@ app.use(session({
         httpOnly: true,
         secure: true, // set to true if using https
         sameSite: 'none', // set to 'none' if dealing with cross-origin requests
+        // TIL: note: the absence of domain and/or path were causing issues with the session not being saved
         domain: "web-dev-class-backend.onrender.com", // Replace with your domain name
         path: '/',
         maxAge: 24 * 60 * 60 * 1000
@@ -154,10 +155,13 @@ app.get('/currentUserId', ensureAuthenticated, (req, res) => {
 
 // Fetch all posts except those by a given userId
 app.get('/posts', ensureAuthenticated, (req, res) => {
+    // note: these two consts are kept separate for modularity and clarity
+    // but *could* be combined in this one case into one const
+
     const userIdToExclude = req.query.excludeUserId; // Get the user ID from query params
     const currentUserId = req.session.passport.user;
-    console.log("fetching posts except for by user " + userIdToExclude);
-    console.log("currentUserId " + currentUserId);
+    console.log("fetching posts except for by user: " + userIdToExclude);
+    console.log("currentUserId: " + currentUserId);
 
     let sql = `
         SELECT 
@@ -181,39 +185,29 @@ app.get('/posts', ensureAuthenticated, (req, res) => {
     sql += ' GROUP BY posts.id, users.f_name, users.m_name, users.l_name, users.initials, users.profile_color';
     sql += ' ORDER BY posts.created_at DESC, posts.id DESC';
 
-    db.query(sql, [currentUserId, userIdToExclude], (err, results) => {
-        if (err) {
-            console.error('Database query error:', err);
-            return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
-        }
-        res.json(results);
-    });
+    try {
+        db.query(sql, [currentUserId, userIdToExclude], (err, results) => {
+            if (err) {
+                console.error('Database query error:', err);
+                return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
+            }
+            res.json(results);
+        });   
+    } catch (err) {
+        console.error('Error fetching posts:', err);
+        return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
+    }
 });
 
 // Fetch posts of a specific user
 app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
     // Q: What is the diff between currentUserId and userId?
+    // A: currentUserId is the user who is currently logged in
+    //   userId is the user whose posts we are fetching
     const userId = req.params.userId;
     const currentUserId = req.session.passport.user;
     console.log("fetching posts by user of id " + currentUserId)
 
-//    const sql = `
-//        SELECT 
-//            posts.*,
-//            users.f_name,
-//            users.m_name,
-//            users.l_name,
-//            users.initials,
-//            users.profile_color,
-//            COUNT(post_likes.id) AS like_count,
-//            SUM(CASE WHEN post_likes.user_id = $1 THEN 1 ELSE 0 END) AS liked_by_current_user
-//        FROM posts
-//        LEFT JOIN users ON posts.user_id = users.id
-//        LEFT JOIN post_likes ON posts.id = post_likes.post_id
-//        WHERE posts.user_id = $2
-//        GROUP BY posts.id
-//        ORDER BY posts.created_at DESC, posts.id DESC
-//    `;
     const sql = `
         SELECT 
             posts.*,
@@ -232,10 +226,18 @@ app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
         ORDER BY posts.created_at DESC, posts.id DESC
     `;
 
-    db.query(sql, [currentUserId, userId], (err, results) => {
-        if (err) throw err;
-        res.json(results);
-    });
+    try {
+        db.query(sql, [currentUserId, userId], (err, results) => {
+            if (err) {
+                console.error('Database query error:', err);
+                return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
+            }
+            res.json(results);
+        });
+    } catch (err) {
+        console.error('Error fetching posts:', err);
+        return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
+    }
 });
 
 // Passport local strategy configuration
