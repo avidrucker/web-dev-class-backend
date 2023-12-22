@@ -210,9 +210,9 @@ app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
     //   userId is the user whose posts we are fetching
     const userId = req.params.userId;
     const currentUserId = req.session.passport.user;
-    console.log("~~~~~~~~");
-    console.log("fetching posts by user of id " + currentUserId)
-    console.log("~~~~~~~~");
+    // TODO: delete: console.log("~~~~~~~~");
+    // TODO: delete: console.log("fetching posts by user of id " + currentUserId)
+    // TODO: delete: console.log("~~~~~~~~");
 
     const sql = `
         SELECT 
@@ -249,8 +249,8 @@ app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
 // Passport local strategy configuration
 passport.use(new LocalStrategy(
     async (username, password, done) => {
-        // console.log("Attempting authentication for username:", username);
-        // console.log("with password: " + password);
+        // TODO: delete: console.log("Attempting authentication for username:", username);
+        // TODO: delete: console.log("with password: " + password);
 
         try {
             const sql = 'SELECT * FROM users WHERE username = $1';
@@ -280,18 +280,18 @@ passport.use(new LocalStrategy(
 
 // Serialization and deserialization for Passport sessions
 passport.serializeUser((user, done) => {
-    // TODO: remove: console.log("Serializing user:", user);
+    // TODO: delete: console.log("Serializing user:", user);
     done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
-    // TODO: remove: console.log("attempting to deserialize user");
+    // TODO: delete: console.log("attempting to deserialize user");
     try {
         const sql = 'SELECT * FROM users WHERE id = $1';
         const { rows } = await db.query(sql, [id]);
         
         if (rows.length > 0) {
-            // TODO: remove: console.log("user found:", rows[0]);
+            // TODO: delete: console.log("user found:", rows[0]);
             done(null, rows[0]);
         } else {
             done(new Error("User not found"), null);
@@ -351,10 +351,10 @@ app.post('/register', async (req, res) => {
             res.status(201).json({success: true, message: 'User registered'});
         });
     } catch (err) {
-        console.log("-----------");
-        console.error("Registration error:", err);
-        console.log("Error registering the user: " + err.message);
-        console.log("-----------");
+        // TODO: delete: console.log("-----------");
+        // TODO: delete: console.error("Registration error:", err);
+        // TODO: delete: console.log("Error registering the user: " + err.message);
+        // TODO: delete: console.log("-----------");
         res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json({success: false, message: 'Error registering the user: ' + err.message});
     }
 });
@@ -379,9 +379,9 @@ app.get('/logout', (req, res) => {
 
 app.get('/successLogin', (req, res) => {
     // Debugging: Log session and user data
-    // TODO: remove: console.log("Session data:", req.session);
-    // TODO: remove: console.log("User data:", req.user);
-    // TODO: remove: console.log("Passport data:", req.session.passport);
+    // TODO: delete: console.log("Session data:", req.session);
+    // TODO: delete: console.log("User data:", req.user);
+    // TODO: delete: console.log("Passport data:", req.session.passport);
 
     if (req.session.passport && req.session.passport.user) {
         res.json({ 
@@ -442,57 +442,69 @@ app.delete('/users/:userId', ensureAuthenticated, (req, res) => {
 
 // Delete a specific post
 app.delete('/posts/:postId', ensureAuthenticated, (req, res) => {
-    const postId = req.params.postId;
+    try {
+        const postId = req.params.postId;
 
-    // Check if the post exists and if the logged-in user is the author
-    const fetchPostSql = 'SELECT id FROM posts WHERE id = $1 AND user_id = $2';
-    db.query(fetchPostSql, [postId, req.user.id], (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
-        }
-
-        if (results.length === 0) {
-            return res.status(errorMap['NOT_FOUND'].statusCode).json('Post not found or not authorized to delete');
-        }
-
-        // If the user is the author, proceed to delete the post
-	const deletePostSql = 'DELETE FROM posts WHERE id = $1';
-        db.query(deletePostSql, [postId], (err, _) => {
+        // Check if the post exists and if the logged-in user is the author
+        const fetchPostSql = 'SELECT id FROM posts WHERE id = $1 AND user_id = $2';
+        db.query(fetchPostSql, [postId, req.user.id], (err, results) => {
             if (err) {
                 console.error(err);
                 return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
             }
-            res.json({success: true, message:'Post deleted successfully'});
+
+            if (results.length === 0) {
+                return res.status(errorMap['NOT_FOUND'].statusCode).json('Post not found or not authorized to delete');
+            }
+
+            // If the user is the author, proceed to delete the post
+        const deletePostSql = 'DELETE FROM posts WHERE id = $1';
+            db.query(deletePostSql, [postId], (err, _) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
+                }
+                res.json({success: true, message:'Post deleted successfully'});
+            });
         });
-    });
+        } catch (err) {
+            console.error("Error deleting post:", err);
+            return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
+        }
+    
 });
 
 // Edit a specific post
 app.put('/posts/:postId', ensureAuthenticated, (req, res) => {
-    const postId = req.params.postId;
-    const { content } = req.body;
+    
+    try {
+        const postId = req.params.postId;
+        const { content } = req.body;
 
-    // Check if the post exists and if the logged-in user is the author
-    const fetchPostSql = 'SELECT id FROM posts WHERE id = $1 AND user_id = $2';
-    db.query(fetchPostSql, [postId, req.user.id], (err, results) => {
-        if (err) {
-            return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
-        }
-
-        if (results.length === 0) {
-            return res.status(errorMap['NOT_FOUND'].statusCode).json('Post not found or not authorized to edit');
-        }
-
-        // If the user is the author, proceed to edit the post, and mark post as "edited"
-        const editPostSql = 'UPDATE posts SET content = $1, edited = true WHERE id = $2';
-        db.query(editPostSql, [content, postId], (err, _) => {
+        // Check if the post exists and if the logged-in user is the author
+        const fetchPostSql = 'SELECT id FROM posts WHERE id = $1 AND user_id = $2';
+        db.query(fetchPostSql, [postId, req.user.id], (err, results) => {
             if (err) {
                 return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
             }
-            res.json({success: true, message:'Post updated successfully'});
+
+            if (results.length === 0) {
+                return res.status(errorMap['NOT_FOUND'].statusCode).json('Post not found or not authorized to edit');
+            }
+
+            // If the user is the author, proceed to edit the post, and mark post as "edited"
+            const editPostSql = 'UPDATE posts SET content = $1, edited = true WHERE id = $2';
+            db.query(editPostSql, [content, postId], (err, _) => {
+                if (err) {
+                    return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
+                }
+                res.json({success: true, message:'Post updated successfully'});
+            });
         });
-    });
+    } catch (error) {
+        console.error("Error updating post:", error);
+        return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
+    } 
 });
 
 // TODO: refactor to indicate that this is an operation on /likes/:likeId
