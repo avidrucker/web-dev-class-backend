@@ -163,7 +163,6 @@ app.get('/posts', ensureAuthenticated, (req, res) => {
     console.log("========");
     console.log("fetching posts except for by user: " + userIdToExclude);
     console.log("currentUserId: " + currentUserId);
-    console.log("========");
 
     let sql = `
         SELECT 
@@ -193,6 +192,9 @@ app.get('/posts', ensureAuthenticated, (req, res) => {
                 console.error('Database query error:', err);
                 return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
             }
+            console.log("results.rows:")
+            console.log(results.rows);
+            console.log("========");
             res.json(results);
         });   
     } catch (err) {
