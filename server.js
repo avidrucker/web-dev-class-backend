@@ -160,8 +160,10 @@ app.get('/posts', ensureAuthenticated, (req, res) => {
 
     const userIdToExclude = req.query.excludeUserId; // Get the user ID from query params
     const currentUserId = req.session.passport.user;
+    console.log("========");
     console.log("fetching posts except for by user: " + userIdToExclude);
     console.log("currentUserId: " + currentUserId);
+    console.log("========");
 
     let sql = `
         SELECT 
@@ -206,7 +208,9 @@ app.get('/posts/:userId', ensureAuthenticated, (req, res) => {
     //   userId is the user whose posts we are fetching
     const userId = req.params.userId;
     const currentUserId = req.session.passport.user;
+    console.log("~~~~~~~~");
     console.log("fetching posts by user of id " + currentUserId)
+    console.log("~~~~~~~~");
 
     const sql = `
         SELECT 
@@ -274,18 +278,18 @@ passport.use(new LocalStrategy(
 
 // Serialization and deserialization for Passport sessions
 passport.serializeUser((user, done) => {
-    console.log("Serializing user:", user);
+    // TODO: remove: console.log("Serializing user:", user);
     done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
-    console.log("attempting to deserialize user");
+    // TODO: remove: console.log("attempting to deserialize user");
     try {
         const sql = 'SELECT * FROM users WHERE id = $1';
         const { rows } = await db.query(sql, [id]);
         
         if (rows.length > 0) {
-            console.log("user found:", rows[0]);
+            // TODO: remove: console.log("user found:", rows[0]);
             done(null, rows[0]);
         } else {
             done(new Error("User not found"), null);
@@ -345,8 +349,10 @@ app.post('/register', async (req, res) => {
             res.status(201).json({success: true, message: 'User registered'});
         });
     } catch (err) {
+        console.log("-----------");
         console.error("Registration error:", err);
-        console.log()
+        console.log("Error registering the user: " + err.message);
+        console.log("-----------");
         res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json({success: false, message: 'Error registering the user: ' + err.message});
     }
 });
@@ -371,9 +377,9 @@ app.get('/logout', (req, res) => {
 
 app.get('/successLogin', (req, res) => {
     // Debugging: Log session and user data
-    console.log("Session data:", req.session);
-    console.log("User data:", req.user);
-    console.log("Passport data:", req.session.passport);
+    // TODO: remove: console.log("Session data:", req.session);
+    // TODO: remove: console.log("User data:", req.user);
+    // TODO: remove: console.log("Passport data:", req.session.passport);
 
     if (req.session.passport && req.session.passport.user) {
         res.json({ 
@@ -555,6 +561,10 @@ app.put('/updateInitials', ensureAuthenticated, (req, res) => {
 app.put('/updateUsername', ensureAuthenticated, (req, res) => {
     const { username } = req.body;
     const userId = req.user.id;  // assuming req.user.id contains the logged-in user's ID
+    console.log("-------");
+    console.log("checking if username " + username + " is available");
+    console.log("for user of id " + userId);
+    console.log("-------");
 
     // First check if the username already exists in the database
     const checkSql = 'SELECT id FROM users WHERE username = $1';
@@ -584,6 +594,7 @@ app.put('/updateUsername', ensureAuthenticated, (req, res) => {
 // Fetch details of the currently logged-in user
 app.get('/currentUser', ensureAuthenticated, (req, res) => {
     const userId = req.user.id;  // assuming req.user.id contains the logged-in user's ID
+    console.log("===");
     console.log("fetching details for user of id " + userId);
 
     const fetchUserDetailsSql = `
@@ -601,12 +612,11 @@ app.get('/currentUser', ensureAuthenticated, (req, res) => {
                 return res.status(errorMap['NOT_FOUND'].statusCode).json('User not found');
             }
     
-            console.log("results:")
-            console.log(results);
-            console.log("results[0]:")
-            console.log(results[0]);
-    
-            const user = results[0];  // Extract the first (and only) result
+            console.log("results.rows:")
+            console.log(results.rows);
+            console.log("===");
+
+            const user = results.rows[0];  // Extract the first (and only) result
             res.json(user);
         });
     } catch (error) {
