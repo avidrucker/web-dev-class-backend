@@ -255,8 +255,6 @@ passport.use(new LocalStrategy(
                 return done(null, false, { message: 'Incorrect username.' });
             }
 
-            // console.log("rows", rows);
-
             const user = rows[0];
             const isMatch = await bcrypt.compare(password, user.password);
 
@@ -586,24 +584,34 @@ app.put('/updateUsername', ensureAuthenticated, (req, res) => {
 // Fetch details of the currently logged-in user
 app.get('/currentUser', ensureAuthenticated, (req, res) => {
     const userId = req.user.id;  // assuming req.user.id contains the logged-in user's ID
+    console.log("fetching details for user of id " + userId);
 
     const fetchUserDetailsSql = `
         SELECT f_name, m_name, l_name, initials, username, profile_color 
         FROM users 
         WHERE id = $1`;
     
-    db.query(fetchUserDetailsSql, [userId], (err, results) => {
-        if (err) {
-            return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
-        }
-
-        if (results.length === 0) {
-            return res.status(errorMap['NOT_FOUND'].statusCode).json('User not found');
-        }
-
-        const user = results[0];  // Extract the first (and only) result
-        res.json(user);
-    });
+    try {
+        db.query(fetchUserDetailsSql, [userId], (err, results) => {
+            if (err) {
+                return res.status(errorMap['INTERNAL_SERVER_ERROR'].statusCode).json('Server error');
+            }
+    
+            if (results.length === 0) {
+                return res.status(errorMap['NOT_FOUND'].statusCode).json('User not found');
+            }
+    
+            console.log("results:")
+            console.log(results);
+            console.log("results[0]:")
+            console.log(results[0]);
+    
+            const user = results[0];  // Extract the first (and only) result
+            res.json(user);
+        });
+    } catch (error) {
+        console.error("An unexpected error occurred while attempting to get current user info:", error);
+    }
 });
 
 app.get('/set-session', (req, res) => {
